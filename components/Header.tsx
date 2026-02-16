@@ -55,7 +55,7 @@ const Header: React.FC = () => {
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex space-x-8">
+          <nav className="hidden md:flex space-x-8" aria-label="Navigation principale">
             {navLinks.map((link) => (
               <Link
                 key={link.path}
@@ -121,6 +121,8 @@ const Header: React.FC = () => {
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
+              aria-label={isMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+              aria-expanded={isMenuOpen}
               className="text-gray-600 hover:text-blue-700"
             >
               <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -137,7 +139,7 @@ const Header: React.FC = () => {
 
       {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white border-b border-gray-200 py-4 px-4 space-y-2">
+        <nav className="md:hidden bg-white border-b border-gray-200 py-4 px-4 space-y-2" aria-label="Navigation mobile">
           {navLinks.map((link) => (
             <Link
               key={link.path}
@@ -188,7 +190,7 @@ const Header: React.FC = () => {
               </>
             )}
           </div>
-        </div>
+        </nav>
       )}
     </header>
   );

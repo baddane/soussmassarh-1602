@@ -1,18 +1,39 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { getCareerAdvice } from '../services/geminiService';
+
+const MAX_QUERIES_PER_MINUTE = 5;
+const COOLDOWN_MS = 60_000;
 
 const CareerAssistant: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [answer, setAnswer] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [rateLimitMsg, setRateLimitMsg] = useState('');
+  const queryTimestamps = useRef<number[]>([]);
+
+  const isRateLimited = useCallback(() => {
+    const now = Date.now();
+    // Remove timestamps older than the cooldown window
+    queryTimestamps.current = queryTimestamps.current.filter(ts => now - ts < COOLDOWN_MS);
+    return queryTimestamps.current.length >= MAX_QUERIES_PER_MINUTE;
+  }, []);
 
   const handleAsk = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim()) return;
+    if (!query.trim() || isLoading) return;
 
+    if (isRateLimited()) {
+      setRateLimitMsg('Vous avez atteint la limite de questions. Veuillez patienter 1 minute.');
+      setTimeout(() => setRateLimitMsg(''), 5000);
+      return;
+    }
+
+    setRateLimitMsg('');
     setIsLoading(true);
+    queryTimestamps.current.push(Date.now());
+
     try {
       const response = await getCareerAdvice(query);
       setAnswer(response);
@@ -35,45 +56,50 @@ const CareerAssistant: React.FC = () => {
               </svg>
               Assistant Carrière AI
             </h3>
-            <button onClick={() => setIsOpen(false)} className="hover:text-blue-100 transition-colors">
+            <button onClick={() => setIsOpen(false)} aria-label="Fermer l'assistant" className="hover:text-blue-100 transition-colors">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           </div>
-          
+
           <div className="p-4 flex-1 overflow-y-auto max-h-[400px] space-y-4">
             {!answer && !isLoading && (
               <p className="text-gray-500 text-sm">
                 Posez-moi vos questions sur le marché du travail au Maroc, comment rédiger un CV ou préparer un entretien !
               </p>
             )}
-            
+
             {isLoading && (
               <div className="flex justify-center py-4">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
             )}
-            
+
             {answer && !isLoading && (
               <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-700 whitespace-pre-line border border-gray-100">
                 {answer}
               </div>
             )}
           </div>
-          
+
           <form onSubmit={handleAsk} className="p-3 bg-gray-50 border-t border-gray-200">
+            {rateLimitMsg && (
+              <p className="text-orange-600 text-xs mb-2 font-medium">{rateLimitMsg}</p>
+            )}
             <div className="flex space-x-2">
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Votre question..."
+                maxLength={500}
                 className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || !query.trim()}
+                aria-label="Envoyer la question"
                 className="bg-blue-600 text-white p-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
               >
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -86,6 +112,7 @@ const CareerAssistant: React.FC = () => {
       ) : (
         <button
           onClick={() => setIsOpen(true)}
+          aria-label="Ouvrir l'assistant carrière"
           className="bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-all transform hover:scale-110 flex items-center group"
         >
           <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-in-out whitespace-nowrap mr-0 group-hover:mr-2">

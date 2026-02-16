@@ -1,8 +1,21 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const Footer: React.FC = () => {
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterStatus, setNewsletterStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const handleNewsletter = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail.trim()) return;
+
+    // TODO: Remplacer par un vrai appel API quand le backend sera prêt
+    setNewsletterStatus('success');
+    setNewsletterEmail('');
+    setTimeout(() => setNewsletterStatus('idle'), 4000);
+  };
+
   return (
     <footer className="bg-gray-900 text-gray-300 pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
@@ -47,16 +60,22 @@ const Footer: React.FC = () => {
         <div className="space-y-6">
           <h3 className="text-white font-bold uppercase text-sm tracking-wider">Newsletter</h3>
           <p className="text-sm">Restez informé des meilleures opportunités dans le Souss-Massa.</p>
-          <form className="flex">
-            <input 
-              type="email" 
-              placeholder="votre@email.com" 
+          <form onSubmit={handleNewsletter} className="flex">
+            <input
+              type="email"
+              required
+              value={newsletterEmail}
+              onChange={(e) => setNewsletterEmail(e.target.value)}
+              placeholder="votre@email.com"
               className="bg-gray-800 border-none rounded-l-md px-4 py-2 w-full text-sm focus:ring-1 focus:ring-blue-500"
             />
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition-colors">
+            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition-colors">
               Ok
             </button>
           </form>
+          {newsletterStatus === 'success' && (
+            <p className="text-green-400 text-xs mt-2">Merci ! Vous recevrez nos meilleures offres.</p>
+          )}
         </div>
       </div>
 

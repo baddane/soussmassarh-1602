@@ -1,5 +1,10 @@
 import { supabaseOffers as supabase } from '../src/services/supabase';
 
+function getClient() {
+  if (!supabase) throw new Error('VITE_SUPABASE_OFFERS_URL non configuré');
+  return supabase;
+}
+
 // Types pour les offres d'emploi
 export interface JobOffer {
   id: string;
@@ -22,7 +27,7 @@ export interface JobOffer {
 export const jobOffersService = {
   // Obtenir toutes les offres d'emploi
   async getAllJobOffers(): Promise<JobOffer[]> {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('job_offers')
       .select('*')
       .order('created_at', { ascending: false });
@@ -37,7 +42,7 @@ export const jobOffersService = {
 
   // Obtenir une offre par ID
   async getJobOfferById(id: string): Promise<JobOffer | null> {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('job_offers')
       .select('*')
       .eq('id', id)
@@ -53,7 +58,7 @@ export const jobOffersService = {
 
   // Obtenir les offres par ville
   async getJobOffersByCity(city: string): Promise<JobOffer[]> {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('job_offers')
       .select('*')
       .ilike('ville', `%${city}%`)
@@ -69,7 +74,7 @@ export const jobOffersService = {
 
   // Obtenir les offres par type de contrat
   async getJobOffersByContractType(contractType: string): Promise<JobOffer[]> {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('job_offers')
       .select('*')
       .eq('type_contrat', contractType)
@@ -85,7 +90,7 @@ export const jobOffersService = {
 
   // Obtenir les offres par métier
   async getJobOffersByJobTitle(jobTitle: string): Promise<JobOffer[]> {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('job_offers')
       .select('*')
       .ilike('emploi_metier', `%${jobTitle}%`)
@@ -106,7 +111,7 @@ export const jobOffersService = {
     jobTitle?: string;
     keywords?: string;
   }): Promise<JobOffer[]> {
-    let query = supabase
+    let query = getClient()
       .from('job_offers')
       .select('*')
       .order('created_at', { ascending: false });
@@ -142,7 +147,7 @@ export const jobOffersService = {
 
   // Obtenir les offres les plus récentes
   async getRecentJobOffers(limit: number = 10): Promise<JobOffer[]> {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('job_offers')
       .select('*')
       .order('created_at', { ascending: false })
@@ -158,7 +163,7 @@ export const jobOffersService = {
 
   // Obtenir les offres par compétences requises
   async getJobOffersBySkills(skills: string[]): Promise<JobOffer[]> {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('job_offers')
       .select('*')
       .overlaps('required_skills', skills)
@@ -175,25 +180,25 @@ export const jobOffersService = {
   // Obtenir les statistiques des offres
   async getJobOffersStats() {
     // Compter le nombre total d'offres
-    const { count: totalOffers } = await supabase
+    const { count: totalOffers } = await getClient()
       .from('job_offers')
       .select('*', { count: 'exact', head: true });
 
     // Compter par type de contrat
-    const { data: contractStats } = await supabase
+    const { data: contractStats } = await getClient()
       .from('job_offers')
       .select('type_contrat, count(*)')
       .group('type_contrat');
 
     // Compter par ville
-    const { data: cityStats } = await supabase
+    const { data: cityStats } = await getClient()
       .from('job_offers')
       .select('ville, count(*)')
       .group('ville')
       .order('count', { ascending: false });
 
     // Compter par métier
-    const { data: jobTitleStats } = await supabase
+    const { data: jobTitleStats } = await getClient()
       .from('job_offers')
       .select('emploi_metier, count(*)')
       .group('emploi_metier')

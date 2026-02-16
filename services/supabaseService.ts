@@ -2,8 +2,15 @@ import { supabase, supabaseUrl } from '../src/services/supabase';
 
 // Vérification que le client Supabase est correctement configuré
 if (!supabase) {
-  console.error('Supabase client not properly configured. Make sure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in .env.local');
-  throw new Error('Supabase client not properly configured');
+  console.warn('⚠️ Supabase client not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in environment variables.');
+}
+
+// Helper: vérifie que le client est disponible avant chaque appel
+function getClient() {
+  if (!supabase) {
+    throw new Error('Supabase non configuré. Ajoutez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY dans les variables d\'environnement Vercel.');
+  }
+  return supabase;
 }
 
 // Types pour les données
@@ -91,7 +98,7 @@ export interface Application {
 export const authService = {
   // Inscription
   async signUp(email: string, password: string, role: 'student' | 'company') {
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await getClient().auth.signUp({
       email,
       password,
       options: {
@@ -108,7 +115,7 @@ export const authService = {
 
   // Connexion
   async signIn(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await getClient().auth.signInWithPassword({
       email,
       password
     });
@@ -119,19 +126,19 @@ export const authService = {
 
   // Déconnexion
   async signOut() {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await getClient().auth.signOut();
     if (error) throw error;
   },
 
   // Récupération du mot de passe
   async resetPassword(email: string) {
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    const { error } = await getClient().auth.resetPasswordForEmail(email);
     if (error) throw error;
   },
 
   // Écouteur d'événements d'authentification
   onAuthStateChange(callback: (event: any, session: any) => void) {
-    return supabase.auth.onAuthStateChange(callback);
+    return getClient().auth.onAuthStateChange(callback);
   }
 };
 
@@ -139,7 +146,7 @@ export const authService = {
 export const studentService = {
   // Créer un profil étudiant
   async createProfile(profileData: Partial<StudentProfile>) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('student_profiles')
       .insert(profileData)
       .select()
@@ -151,7 +158,7 @@ export const studentService = {
 
   // Mettre à jour un profil étudiant
   async updateProfile(profileId: string, profileData: Partial<StudentProfile>) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('student_profiles')
       .update(profileData)
       .eq('id', profileId)
@@ -164,7 +171,7 @@ export const studentService = {
 
   // Obtenir le profil étudiant
   async getProfile(userId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('student_profiles')
       .select('*')
       .eq('user_id', userId)
@@ -179,7 +186,7 @@ export const studentService = {
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}/cv.${fileExt}`;
     
-    const { data, error } = await supabase.storage
+    const { data, error } = await getClient().storage
       .from('cv-files')
       .upload(fileName, file, {
         cacheControl: '3600',
@@ -189,7 +196,7 @@ export const studentService = {
     if (error) throw error;
     
     // Obtenir l'URL publique
-    const { data: publicData } = supabase.storage
+    const { data: publicData } = getClient().storage
       .from('cv-files')
       .getPublicUrl(fileName);
 
@@ -219,7 +226,7 @@ export const studentService = {
 export const companyService = {
   // Créer un profil entreprise
   async createProfile(profileData: Partial<CompanyProfile>) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('company_profiles')
       .insert(profileData)
       .select()
@@ -231,7 +238,7 @@ export const companyService = {
 
   // Mettre à jour un profil entreprise
   async updateProfile(profileId: string, profileData: Partial<CompanyProfile>) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('company_profiles')
       .update(profileData)
       .eq('id', profileId)
@@ -244,7 +251,7 @@ export const companyService = {
 
   // Obtenir le profil entreprise
   async getProfile(userId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('company_profiles')
       .select('*')
       .eq('user_id', userId)
@@ -259,7 +266,7 @@ export const companyService = {
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}/logo.${fileExt}`;
     
-    const { data, error } = await supabase.storage
+    const { data, error } = await getClient().storage
       .from('company-logos')
       .upload(fileName, file, {
         cacheControl: '3600',
@@ -269,7 +276,7 @@ export const companyService = {
     if (error) throw error;
     
     // Obtenir l'URL publique
-    const { data: publicData } = supabase.storage
+    const { data: publicData } = getClient().storage
       .from('company-logos')
       .getPublicUrl(fileName);
 
@@ -299,7 +306,7 @@ export const companyService = {
 export const jobService = {
   // Créer une offre d'emploi
   async createJob(jobData: Partial<JobOffer>) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('job_offers')
       .insert(jobData)
       .select()
@@ -311,7 +318,7 @@ export const jobService = {
 
   // Mettre à jour une offre d'emploi
   async updateJob(jobId: string, jobData: Partial<JobOffer>) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('job_offers')
       .update(jobData)
       .eq('id', jobId)
@@ -324,7 +331,7 @@ export const jobService = {
 
   // Obtenir les offres d'une entreprise
   async getCompanyJobs(companyId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('job_offers')
       .select(`
         *,
@@ -347,7 +354,7 @@ export const jobService = {
     location?: string;
     search?: string;
   }) {
-    let query = supabase
+    let query = getClient()
       .from('job_offers')
       .select(`
         *,
@@ -385,7 +392,7 @@ export const jobService = {
 
   // Obtenir une offre par ID
   async getJobById(jobId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('job_offers')
       .select(`
         *,
@@ -411,7 +418,7 @@ export const applicationService = {
     student_id: string;
     cover_letter?: string;
   }) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('applications')
       .insert(applicationData)
       .select()
@@ -423,7 +430,7 @@ export const applicationService = {
 
   // Mettre à jour le statut d'une candidature
   async updateApplicationStatus(applicationId: string, status: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('applications')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('id', applicationId)
@@ -436,7 +443,7 @@ export const applicationService = {
 
   // Obtenir les candidatures d'un étudiant
   async getStudentApplications(studentId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('applications')
       .select(`
         *,
@@ -459,7 +466,7 @@ export const applicationService = {
 
   // Obtenir les candidatures pour une offre
   async getJobApplications(jobOfferId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('applications')
       .select(`
         *,
@@ -490,7 +497,7 @@ export const notificationService = {
     message: string;
     data?: any;
   }) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('notifications')
       .insert(notificationData)
       .select()
@@ -502,7 +509,7 @@ export const notificationService = {
 
   // Marquer une notification comme lue
   async markAsRead(notificationId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('notifications')
       .update({ is_read: true, read_at: new Date().toISOString() })
       .eq('id', notificationId)
@@ -515,7 +522,7 @@ export const notificationService = {
 
   // Obtenir les notifications d'un utilisateur
   async getUserNotifications(userId: string, limit: number = 50) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('notifications')
       .select('*')
       .eq('user_id', userId)
@@ -528,7 +535,7 @@ export const notificationService = {
 
   // Obtenir le nombre de notifications non lues
   async getUnreadCount(userId: string) {
-    const { count, error } = await supabase
+    const { count, error } = await getClient()
       .from('notifications')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
@@ -543,7 +550,7 @@ export const notificationService = {
 export const schoolService = {
   // Obtenir toutes les écoles partenaires
   async getPartnerSchools() {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('schools')
       .select('*')
       .eq('is_partner', true)
@@ -555,7 +562,7 @@ export const schoolService = {
 
   // Obtenir une école par ID
   async getSchoolById(schoolId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('schools')
       .select('*')
       .eq('id', schoolId)
@@ -570,7 +577,7 @@ export const schoolService = {
 export const articleService = {
   // Obtenir les articles publiés
   async getPublishedArticles(category?: string, limit: number = 10) {
-    let query = supabase
+    let query = getClient()
       .from('articles')
       .select('*')
       .eq('is_published', true)
@@ -588,7 +595,7 @@ export const articleService = {
 
   // Obtenir un article par slug
   async getArticleBySlug(slug: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('articles')
       .select('*')
       .eq('slug', slug)
@@ -604,7 +611,7 @@ export const articleService = {
 export const statsService = {
   // Obtenir les statistiques d'une entreprise
   async getCompanyStats(companyId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('company_job_stats')
       .select('*')
       .eq('company_id', companyId)
@@ -616,7 +623,7 @@ export const statsService = {
 
   // Obtenir les statistiques d'une offre
   async getJobStats(jobId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await getClient()
       .from('job_application_stats')
       .select('*')
       .eq('job_id', jobId)

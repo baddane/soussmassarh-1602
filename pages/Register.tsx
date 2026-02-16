@@ -118,11 +118,28 @@ const Register: React.FC = () => {
       return;
     }
 
+    if (formData.password.length < 6) {
+      alert("Le mot de passe doit contenir au moins 6 caractères.");
+      return;
+    }
+
     setIsLoading(true);
     try {
+      // 1. Créer le compte via Supabase Auth
+      try {
+        const { authService } = await import('../services/supabaseService');
+        await authService.signUp(formData.email, formData.password, role);
+      } catch (authError: any) {
+        // Si Supabase non configuré, continuer en mode dégradé
+        if (authError?.message?.includes('not properly configured')) {
+          console.warn('Supabase auth not configured, skipping signup');
+        } else {
+          throw authError;
+        }
+      }
+
+      // 2. Upload fichier vers S3
       let finalFileUrl = '';
-      
-      // Upload REEL vers S3 (Pipeline direct ultra-rapide)
       if (uploadedFile) {
         const category = role === 'student' ? 'cv' : 'company_doc';
         const { uploadUrl, publicUrl } = await apiService.getUploadUrl(uploadedFile.name, uploadedFile.type, category as any);
@@ -130,18 +147,23 @@ const Register: React.FC = () => {
         finalFileUrl = publicUrl;
       }
 
-      // Login + Sauvegarde DB immédiate
+      // 3. Extraire les données du profil SANS le mot de passe
+      const { password: _pwd, ...profileData } = formData;
+
+      // 4. Login + Sauvegarde DB immédiate
       await login(formData.email, role, {
-        ...formData,
+        ...profileData,
         [role === 'student' ? 'cvUrl' : 'companyDocUrl']: finalFileUrl,
-        password: undefined 
       });
 
-      // Redirection SANS latence
+      // 5. Nettoyer le mot de passe du state
+      setFormData(prev => ({ ...prev, password: '' }));
+      setConfirmPassword('');
+
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration failed", error);
-      alert("Erreur lors de l'enregistrement. Vérifiez votre connexion.");
+      alert(error?.message || "Erreur lors de l'enregistrement. Vérifiez votre connexion.");
     } finally {
       setIsLoading(false);
     }

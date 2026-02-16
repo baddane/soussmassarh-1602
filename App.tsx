@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { Component, ErrorInfo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -75,8 +75,51 @@ const AppRoutes = () => {
   );
 };
 
+// Error Boundary pour capturer les erreurs React runtime
+class ErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('React Error Boundary caught:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+          <div className="text-center max-w-md">
+            <h1 className="text-4xl font-black text-gray-200 mb-4">Oops</h1>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Une erreur est survenue</h2>
+            <p className="text-gray-500 mb-6">
+              L'application a rencontré un problème inattendu. Veuillez rafraîchir la page.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition-colors"
+            >
+              Rafraîchir la page
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const App: React.FC = () => {
   return (
+    <ErrorBoundary>
     <AuthProvider>
       <Router>
         <div className="min-h-screen flex flex-col bg-gray-50">
@@ -89,6 +132,7 @@ const App: React.FC = () => {
         </div>
       </Router>
     </AuthProvider>
+    </ErrorBoundary>
   );
 };
 

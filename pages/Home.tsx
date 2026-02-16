@@ -4,11 +4,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { jobOffersService } from '../services/jobOffersService';
 import { CITIES, SECTORS } from '../constants';
 
+interface HomeStats {
+  agadirCount: number;
+  stageCount: number;
+  cdiCount: number;
+}
+
 const Home: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
   const [selectedSector, setSelectedSector] = useState('');
   const [featuredOffers, setFeaturedOffers] = useState<any[]>([]);
+  const [stats, setStats] = useState<HomeStats>({ agadirCount: 0, stageCount: 0, cdiCount: 0 });
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -17,25 +24,37 @@ const Home: React.FC = () => {
     navigate(`/offres?q=${searchQuery}&city=${selectedCity}&sector=${selectedSector}`);
   };
 
-  // Charger les offres en vedette
+  // Charger les offres en vedette ET les stats réelles
   useEffect(() => {
-    const loadFeaturedOffers = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        const offers = await jobOffersService.getAllJobOffers();
-        // Trier par date de publication et prendre les 6 plus récentes
-        const sortedOffers = offers
-          .sort((a: any, b: any) => new Date(b.date_offre).getTime() - new Date(a.date_offre).getTime())
-          .slice(0, 6);
-        setFeaturedOffers(sortedOffers);
+
+        // Charger les offres récentes et les stats en parallèle
+        const [offers, statsData] = await Promise.all([
+          jobOffersService.getRecentJobOffers(6),
+          jobOffersService.getJobOffersStats().catch(() => null),
+        ]);
+
+        setFeaturedOffers(offers);
+
+        if (statsData) {
+          const agadirCount = (statsData.cityStats as any[])
+            ?.find((c: any) => c.ville === 'Agadir')?.count || 0;
+          const stageCount = (statsData.contractStats as any[])
+            ?.find((c: any) => c.type_contrat === 'Stage')?.count || 0;
+          const cdiCount = (statsData.contractStats as any[])
+            ?.find((c: any) => c.type_contrat === 'CDI')?.count || 0;
+          setStats({ agadirCount, stageCount, cdiCount });
+        }
       } catch (error) {
-        console.error('Error loading featured offers:', error);
+        console.error('Error loading home data:', error);
       } finally {
         setLoading(false);
       }
     };
-    
-    loadFeaturedOffers();
+
+    loadData();
   }, []);
 
   return (
@@ -120,9 +139,9 @@ const Home: React.FC = () => {
           ))
         ) : (
           [
-            { title: "Offres à Agadir", count: featuredOffers.filter(offer => offer.ville === 'Agadir').length.toString(), color: "bg-blue-100 text-blue-700", icon: "🏙️" },
-            { title: "Stages Souss-Massa", count: featuredOffers.filter(offer => offer.type_contrat === 'Stage').length.toString(), color: "bg-green-100 text-green-700", icon: "🎓" },
-            { title: "CDI / Emplois", count: featuredOffers.filter(offer => offer.type_contrat === 'CDI').length.toString(), color: "bg-purple-100 text-purple-700", icon: "💼" },
+            { title: "Offres à Agadir", count: stats.agadirCount.toString(), color: "bg-blue-100 text-blue-700", icon: "🏙️" },
+            { title: "Stages Souss-Massa", count: stats.stageCount.toString(), color: "bg-green-100 text-green-700", icon: "🎓" },
+            { title: "CDI / Emplois", count: stats.cdiCount.toString(), color: "bg-purple-100 text-purple-700", icon: "💼" },
           ].map((stat, i) => (
             <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
               <div className={`${stat.color} w-12 h-12 rounded-lg flex items-center justify-center text-2xl`}>

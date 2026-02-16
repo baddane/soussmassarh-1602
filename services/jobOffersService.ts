@@ -1,11 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-// Configuration Supabase avec vos credentials
-const supabaseUrl = 'https://tqrhxhoqqktnhttzmoqt.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxcmh4aG9xcWt0bmh0dHptb3F0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA5MzgwNDcsImV4cCI6MjA4NjUxNDA0N30.hkxJ6XW6CGkAnAaXYabr049eiiEnOYpuinMoHf-TkfM';
-
-// Initialisation du client Supabase
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { supabaseOffers as supabase } from '../src/services/supabase';
 
 // Types pour les offres d'emploi
 export interface JobOffer {

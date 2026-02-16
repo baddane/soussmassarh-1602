@@ -20,47 +20,34 @@ const Offers: React.FC = () => {
   const [appliedIds, setAppliedIds] = useState<string[]>([]);
   const [expandedOffers, setExpandedOffers] = useState<Set<string>>(new Set());
 
-  // Charger les offres depuis Supabase
+  // Single unified data fetch: load offers with current filters
   useEffect(() => {
     const loadOffers = async () => {
       try {
         setLoading(true);
-        const offers = await jobOffersService.getAllJobOffers();
-        setFilteredOffers(offers);
+        const hasFilters = search || city || jobTitle || contractType;
+
+        if (hasFilters) {
+          const filters = {
+            city: city || undefined,
+            contractType: contractType || undefined,
+            jobTitle: jobTitle || undefined,
+            keywords: search || undefined
+          };
+          const offers = await jobOffersService.searchJobOffers(filters);
+          setFilteredOffers(offers);
+        } else {
+          const offers = await jobOffersService.getAllJobOffers();
+          setFilteredOffers(offers);
+        }
       } catch (error) {
         console.error('Error loading job offers:', error);
       } finally {
         setLoading(false);
       }
     };
-    
-    loadOffers();
-  }, []);
 
-  // Filtrer les offres
-  useEffect(() => {
-    const filterOffers = async () => {
-      try {
-        setLoading(true);
-        const filters = {
-          city: city || undefined,
-          contractType: contractType || undefined,
-          jobTitle: jobTitle || undefined,
-          keywords: search || undefined
-        };
-        
-        const offers = await jobOffersService.searchJobOffers(filters);
-        setFilteredOffers(offers);
-      } catch (error) {
-        console.error('Error filtering job offers:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    if (search || city || jobTitle || contractType) {
-      filterOffers();
-    }
+    loadOffers();
   }, [search, city, jobTitle, contractType]);
 
   const handleApply = async (offer: any) => {
@@ -280,25 +267,9 @@ const Offers: React.FC = () => {
                     }`}>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <div 
-                            className="text-gray-600 leading-relaxed text-sm space-y-3"
-                            dangerouslySetInnerHTML={{ 
-                              __html: (offer.full_description || '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                                .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                                .replace(/^###\s+(.*)$/gm, '<h5 class="font-bold text-gray-800 mt-4 mb-2 border-b border-gray-200 pb-2">$1</h5>')
-                                .replace(/^##\s+(.*)$/gm, '<h6 class="font-semibold text-gray-800 mt-3 mb-2">$1</h6>')
-                                .replace(/^#\s+(.*)$/gm, '<h4 class="font-bold text-gray-900 mt-6 mb-3 text-lg">$1</h4>')
-                                .replace(/\n\n/g, '</p><p class="mt-3">')
-                                .replace(/\n/g, '<br>')
-                                .replace(/^- (.*?)$/gm, '• $1')
-                                .replace(/^\* (.*?)$/gm, '• $1')
-                                .replace(/^1\. (.*?)$/gm, '1. $1')
-                                .replace(/^2\. (.*?)$/gm, '2. $1')
-                                .replace(/^3\. (.*?)$/gm, '3. $1')
-                                .replace(/^4\. (.*?)$/gm, '4. $1')
-                                .replace(/^5\. (.*?)$/gm, '5. $1')
-                            }}
-                          />
+                          <div className="text-gray-600 leading-relaxed text-sm space-y-3 whitespace-pre-line">
+                            {offer.full_description || 'Aucune description disponible.'}
+                          </div>
                         </div>
                         
                         <div className="space-y-4">

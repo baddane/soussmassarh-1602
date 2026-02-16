@@ -2,24 +2,27 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { authService } from '../services/supabaseService';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login, user } = useAuth();
+  const [errorMsg, setErrorMsg] = useState('');
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg('');
     setIsLoading(true);
     try {
-      // Pour la démo, on simule que l'utilisateur est un étudiant
-      await login(email, 'student');
-      // La navigation se fera via le useEffect ou directement ici si on connaît l'état
+      const { user: authUser } = await authService.signIn(email, password);
+      const role = authUser?.user_metadata?.role || 'student';
+      await login(email, role as 'student' | 'company');
       navigate('/dashboard');
-    } catch (error) {
-      alert('Erreur de connexion');
+    } catch (error: any) {
+      setErrorMsg(error?.message || 'Email ou mot de passe incorrect.');
     } finally {
       setIsLoading(false);
     }
@@ -30,10 +33,15 @@ const Login: React.FC = () => {
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 space-y-8 border border-gray-100">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">Connexion</h1>
-          <p className="text-gray-500 mt-2 text-sm">Accédez à votre espace Stagiaires.ma</p>
+          <p className="text-gray-500 mt-2 text-sm">Accédez à votre espace SoussMassa-RH</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {errorMsg && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+              {errorMsg}
+            </div>
+          )}
           <div className="space-y-2">
             <label className="text-sm font-semibold text-gray-700">Email</label>
             <input

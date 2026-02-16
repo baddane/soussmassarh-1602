@@ -19,7 +19,7 @@ const PublishOffer: React.FC = () => {
 
   const [formData, setFormData] = useState({
     emploi_metier: '',
-    raison_sociale: user?.companyName || user?.name || '',
+    raison_sociale: user?.details?.companyName || user?.name || '',
     ville: '',
     type_contrat: '',
     nbre_postes: 1,

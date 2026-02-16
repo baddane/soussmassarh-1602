@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { apiService } from '../services/apiService';
+import { authService } from '../services/supabaseService';
 
 interface User {
   email: string;
@@ -19,18 +20,52 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
 }
 
+const STORAGE_KEY = 'smrh_user';
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
 
-  // Hydratation immédiate depuis le localStorage pour éviter tout "flicker" au rechargement
+  // Hydratation: vérifier la session Supabase au lieu de se fier uniquement au localStorage
   useEffect(() => {
-    const savedUser = localStorage.getItem('stagiaires_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    const initAuth = async () => {
+      // 1. Hydratation rapide depuis le localStorage pour éviter le flicker
+      const savedUser = localStorage.getItem(STORAGE_KEY);
+      if (savedUser) {
+        try {
+          setUser(JSON.parse(savedUser));
+        } catch {
+          localStorage.removeItem(STORAGE_KEY);
+        }
+      }
+
+      // 2. Vérification asynchrone de la session Supabase (source de vérité)
+      try {
+        authService.onAuthStateChange((event, session) => {
+          if (event === 'SIGNED_OUT' || !session) {
+            setUser(null);
+            localStorage.removeItem(STORAGE_KEY);
+          }
+        });
+      } catch {
+        // Supabase non configuré — on garde le fallback localStorage
+      }
+    };
+
+    initAuth();
   }, []);
+
+  const persistUser = (userData: User) => {
+    // Ne stocker que le minimum nécessaire (pas les données sensibles)
+    const safeData = {
+      email: userData.email,
+      name: userData.name,
+      role: userData.role,
+      isProfileComplete: userData.isProfileComplete,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(safeData));
+  };
 
   const refreshUser = async () => {
     if (!user) return;
@@ -39,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (dbProfile && Object.keys(dbProfile).length > 0) {
         const updatedUser = { ...user, details: dbProfile, isProfileComplete: true };
         setUser(updatedUser);
-        localStorage.setItem('stagiaires_user', JSON.stringify(updatedUser));
+        persistUser(updatedUser);
       }
     } catch (e) {
       console.warn("Sync failed, fallback to local state");
@@ -47,31 +82,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = async (email: string, role: 'student' | 'company', initialDetails?: any) => {
-    // 1. MISE À JOUR LOCALE IMMÉDIATE (Fluidité UI)
-    const name = initialDetails 
+    const name = initialDetails
       ? (initialDetails.firstName || email.split('@')[0])
       : email.split('@')[0];
 
-    const userData: User = { 
-      email, 
-      name, 
+    const userData: User = {
+      email,
+      name,
       role,
       isProfileComplete: !!initialDetails,
       details: initialDetails || {}
     };
-    
-    setUser(userData);
-    localStorage.setItem('stagiaires_user', JSON.stringify(userData));
 
-    // 2. PERSISTENCE ASYNCHRONE (Background)
-    // On ne 'await' pas si on veut une redirection instantanée, 
-    // mais ici on le fait pour garantir que la DB est à jour avant le dashboard.
+    setUser(userData);
+    persistUser(userData);
+
     if (initialDetails) {
       try {
         await apiService.saveProfileSync(initialDetails);
       } catch (e) {
         console.error("Critical: Database sync failed during login", e);
-        // On pourrait ajouter un retry ici si besoin
       }
     }
   };
@@ -80,14 +110,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (user) {
       const updatedUser = { ...user, isProfileComplete: true, details: { ...user.details, ...details } };
       setUser(updatedUser);
-      localStorage.setItem('stagiaires_user', JSON.stringify(updatedUser));
+      persistUser(updatedUser);
       await apiService.saveProfileSync(details);
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     setUser(null);
-    localStorage.removeItem('stagiaires_user');
+    localStorage.removeItem(STORAGE_KEY);
+    try {
+      await authService.signOut();
+    } catch {
+      // Supabase non configuré — on nettoie quand même le state local
+    }
   };
 
   return (

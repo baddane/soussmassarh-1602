@@ -11,11 +11,17 @@ const CareerAssistant: React.FC = () => {
   const handleAsk = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
-    
+
     setIsLoading(true);
-    const response = await getCareerAdvice(query);
-    setAnswer(response);
-    setIsLoading(false);
+    try {
+      const response = await getCareerAdvice(query);
+      setAnswer(response);
+      setQuery('');
+    } catch {
+      setAnswer("Désolé, une erreur est survenue. Veuillez réessayer.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

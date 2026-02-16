@@ -236,12 +236,12 @@ const Home: React.FC = () => {
             <h2 className="text-3xl font-bold">Vous recrutez dans le Souss-Massa ?</h2>
             <p className="text-blue-100 text-lg">Publiez vos annonces sur soussmassa-rh.com et accédez au meilleur vivier de talents locaux.</p>
             <div className="pt-6 flex flex-col sm:flex-row justify-center gap-4">
-              <button className="bg-white text-blue-700 px-8 py-3 rounded-lg font-bold hover:bg-blue-50 transition-colors">
+              <Link to="/inscription" className="bg-white text-blue-700 px-8 py-3 rounded-lg font-bold hover:bg-blue-50 transition-colors">
                 Recruter maintenant
-              </button>
-              <button className="bg-blue-600/30 border border-white/30 text-white px-8 py-3 rounded-lg font-bold hover:bg-white/10 transition-colors">
-                Nos tarifs
-              </button>
+              </Link>
+              <Link to="/entreprises" className="bg-blue-600/30 border border-white/30 text-white px-8 py-3 rounded-lg font-bold hover:bg-white/10 transition-colors">
+                Découvrir les entreprises
+              </Link>
             </div>
           </div>
         </div>

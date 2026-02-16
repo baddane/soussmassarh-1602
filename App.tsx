@@ -9,6 +9,12 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ProfileSetup from './pages/ProfileSetup';
 import Dashboard from './pages/Dashboard';
+import Companies from './pages/Companies';
+import Schools from './pages/Schools';
+import Articles from './pages/Articles';
+import ArticleDetail from './pages/ArticleDetail';
+import PublishOffer from './pages/PublishOffer';
+import Pricing from './pages/Pricing';
 import CareerAssistant from './components/CareerAssistant';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
@@ -61,10 +67,19 @@ const AppRoutes = () => {
         </ProtectedRoute>
       } />
       
-      {/* Fallbacks pour les pages en construction */}
-      <Route path="/entreprises" element={<div className="p-12 text-center text-gray-500 min-h-[50vh] flex items-center justify-center">Liste des entreprises en cours de chargement...</div>} />
-      <Route path="/ecoles" element={<div className="p-12 text-center text-gray-500 min-h-[50vh] flex items-center justify-center">Liste des écoles partenaires...</div>} />
-      <Route path="/conseils" element={<div className="p-12 text-center text-gray-500 min-h-[50vh] flex items-center justify-center">Nos articles et conseils carrière...</div>} />
+      {/* Pages protégées recruteur */}
+      <Route path="/offres/publier" element={
+        <ProtectedRoute>
+          <PublishOffer />
+        </ProtectedRoute>
+      } />
+      <Route path="/tarifs" element={<Pricing />} />
+
+      {/* Pages publiques avec données Supabase */}
+      <Route path="/entreprises" element={<Companies />} />
+      <Route path="/ecoles" element={<Schools />} />
+      <Route path="/conseils" element={<Articles />} />
+      <Route path="/conseils/:slug" element={<ArticleDetail />} />
       
       {/* Legacy / redirection fallback */}
       <Route path="/finaliser-profil" element={<Navigate to="/dashboard" replace />} />

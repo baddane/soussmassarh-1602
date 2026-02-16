@@ -171,9 +171,9 @@ const EmployerView = ({ user }: { user: any }) => {
                     <h3 className="text-xl font-black mb-2">Besoin de plus de visibilité ?</h3>
                     <p className="text-blue-100 text-sm opacity-80">Boostez vos annonces pour apparaître en tête de liste pendant 7 jours.</p>
                   </div>
-                  <button className="bg-white text-blue-600 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs mt-6 self-start hover:bg-blue-50 transition-all">
+                  <Link to="/tarifs" className="bg-white text-blue-600 px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs mt-6 self-start hover:bg-blue-50 transition-all inline-block">
                     Passer en Premium ⭐
-                  </button>
+                  </Link>
                </div>
             </div>
           </>
@@ -183,9 +183,9 @@ const EmployerView = ({ user }: { user: any }) => {
            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
               <div className="p-8 border-b border-gray-50 flex justify-between items-center">
                  <h3 className="font-black text-xl text-gray-900">Gestion des Annonces</h3>
-                 <button className="bg-blue-600 text-white px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all">
+                 <Link to="/offres/publier" className="bg-blue-600 text-white px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-700 transition-all">
                    Publier une offre
-                 </button>
+                 </Link>
               </div>
               <table className="w-full text-left">
                 <thead className="bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-widest">

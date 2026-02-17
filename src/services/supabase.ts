@@ -14,9 +14,11 @@ if (!siteSupabaseUrl || !siteSupabaseAnonKey) {
   console.warn('⚠️  Variables d\'environnement du site non définies. Assurez-vous d\'avoir un .env.local avec VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY');
 }
 
-// Clients Supabase
-export const supabaseOffers = createClient(offersSupabaseUrl, offersSupabaseAnonKey);
-export const supabaseSite = siteSupabaseUrl && siteSupabaseAnonKey 
+// Clients Supabase — ne créer que si les variables sont définies
+export const supabaseOffers = offersSupabaseUrl && offersSupabaseAnonKey
+  ? createClient(offersSupabaseUrl, offersSupabaseAnonKey)
+  : null;
+export const supabaseSite = siteSupabaseUrl && siteSupabaseAnonKey
   ? createClient(siteSupabaseUrl, siteSupabaseAnonKey)
   : null;
 
